@@ -6,11 +6,14 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const helmet = require("helmet");
 
+const db = require('./config/db');//Database
+
 const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users');
+const usersRouter = require('./routes/usersEX');
 
 const app = express();
 
+db.connect();
 app.use(cors())
 app.use(helmet());
 app.use(logger('dev'));
