@@ -4,17 +4,18 @@ const Joi = require('joi');
 let Schema = mongoose.Schema;
 
 const fields = {
-	'title' : String,
+	'title' : {type: String, required: true},
 	'description' : String,
 	'mentor' : {
 		_id: {
 			type: Schema.Types.ObjectId,
-			ref: 'userModel'
+			ref: 'userModel',
+			required: true
 		},
 		name: String,
 		email: String
 	},
-	'deadline' : Date,
+	'deadline' : {type: Date, required: true},
 	'created_at' : { type: Date, default: Date.now }
 }
 
@@ -22,7 +23,7 @@ let assessmentSchema = new Schema(fields);
 
 const assessmentModel = mongoose.model("assessment", assessmentSchema);
 
-function validateAssessment(user) {
+function validateAssessment(data) {
 	const schema = Joi.object({
 		title: Joi.string()
 			.min(2)
@@ -33,7 +34,7 @@ function validateAssessment(user) {
 		deadline: Joi.date().greater('now').required()
 	});
   
-	return schema.validate(user);
+	return schema.validate(data);
   }
 
 exports.assessmentModel = assessmentModel;
