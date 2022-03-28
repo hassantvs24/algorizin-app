@@ -9,7 +9,7 @@ const helmet = require("helmet");
 const db = require('./config/db');//Database
 
 const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/usersEX');
+const usersRouter = require('./routes/userRoutes');
 
 const app = express();
 
@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/api/', indexRouter);
+app.use('/api/users', usersRouter);
 
 module.exports = app;

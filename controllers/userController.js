@@ -1,5 +1,6 @@
-var UserModel = require('../models/userModel.js');
-
+require('dotenv').config();
+const {UserModel, validate} = require('../models/userModel.js');
+const bcrypt = require('bcryptjs');
 /**
  * userController.js
  *
@@ -29,7 +30,7 @@ module.exports = {
     show: function (req, res) {
         var id = req.params.id;
 
-        UserModel.findOne({_id: id}, function (err, user) {
+         UserModel.findOne({_id: id}, function (err, user) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when getting user.',
@@ -50,15 +51,25 @@ module.exports = {
     /**
      * userController.create()
      */
-    create: function (req, res) {
+    create: async function (req, res) {
+
+        const {name, email, userType, password} = req.body;
+        const { error } = validate(req.body);
+        if (error) return res.status(400).send(error.details[0].message);
+
+        let encryptedPassword = await bcrypt.hash(password, 10);
+
+        const oldUser = await UserModel.findOne({ email });
+        if (oldUser) return res.status(409).send("User Already Exist");
+
         var user = new UserModel({
-			name : req.body.name,
-			email : req.body.email,
-			userType : req.body.userType,
-			createdAt : req.body.createdAt
+			name : name,
+            email : email.toLowerCase(),
+            password : encryptedPassword,
+			userType : userType
         });
 
-        user.save(function (err, user) {
+        await user.save(function (err, user) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when creating user',
@@ -74,9 +85,10 @@ module.exports = {
      * userController.update()
      */
     update: function (req, res) {
-        var id = req.params.id;
+        let id = req.params.id;
+        const {name, email, userType, password} = req.body;
 
-        UserModel.findOne({_id: id}, function (err, user) {
+        UserModel.findOne({_id: id}, async function (err, user) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when getting user',
@@ -90,12 +102,21 @@ module.exports = {
                 });
             }
 
-            user.name = req.body.name ? req.body.name : user.name;
-			user.email = req.body.email ? req.body.email : user.email;
-			user.userType = req.body.userType ? req.body.userType : user.userType;
-			user.createdAt = req.body.createdAt ? req.body.createdAt : user.createdAt;
+            if(email != user.email){
+                const oldUser = await UserModel.findOne({ email });
+                if (oldUser) return res.status(409).send("User Already Exist");
+            }
+
+            user.name = name? name : user.name;
+			user.email = email ? email : user.email;
+			user.userType = userType ? userType : user.userType;
+            if (!password) {
+                let encryptedPassword = await bcrypt.hash(password, 10);
+
+                user.password = encryptedPassword;
+            }
 			
-            user.save(function (err, user) {
+            await user.save(function (err, user) {
                 if (err) {
                     return res.status(500).json({
                         message: 'Error when updating user.',
@@ -122,7 +143,7 @@ module.exports = {
                 });
             }
 
-            return res.status(204).json();
+            return res.json({message: 'User Successfully Deleted!'});
         });
     }
 };
