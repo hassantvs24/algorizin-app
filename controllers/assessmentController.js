@@ -1,5 +1,5 @@
-const assessmentModel = require('../models/assessmentModel.js');
-
+const {assessmentModel, validate} = require('../models/assessmentModel.js');
+const {UserModel} = require('../models/userModel.js');
 /**
  * assessmentController.js
  *
@@ -47,18 +47,42 @@ module.exports = {
    * assessmentController.create()
    */
   create: (req, res) => {
-    let assessment = new assessmentModel({			title : req.body.title,			description : req.body.description,			mentor : req.body.mentor,			deadline : req.body.deadline,			created_at : req.body.created_at
-    });
+    const {title, description, mentor, deadline} = req.body;
+    const { error } = validate(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
 
-    assessment.save((err, assessment) => {
-      if (err) {
-        return res.status(500).json({
-          message: 'Error when creating assessment',
-          error: err
-        });
-      }
-      return res.status(201).json(assessment);
-    });
+     UserModel.findOne({ _id: mentor, userType: { $ne: 'Student' } }, (err, user) => {
+          if (err){
+            return res.status(500).json({
+                message: 'Error when checking mentor',
+                error: err
+              });
+          }
+          else{
+              if(!user) return res.status(404).json({message: 'Mentor User not found'});
+
+              let assessment = new assessmentModel({
+                title : title,
+                description : description,
+                mentor : {
+                  _id: mentor,
+                  name: user.name,
+                  email: user.email
+                },
+                deadline : deadline
+              });
+          
+               assessment.save((err, assessment) => {
+                if (err) {
+                  return res.status(500).json({
+                    message: 'Error when creating assessment',
+                    error: err
+                  });
+                }
+                return res.status(201).json(assessment);
+              });
+          }
+      });
   },
 
   /**
@@ -66,31 +90,52 @@ module.exports = {
    */
   update: (req, res) => {
     let id = req.params.id;
-    assessmentModel.findOne({_id: id}, (err, assessment) => {
-      if (err) {
-        return res.status(500).json({
-          message: 'Error when getting assessment',
-          error: err
-        });
-      }
-      if (!assessment) {
-        return res.status(404).json({
-          message: 'No such assessment'
-        });
-      }
+    const {title, description, mentor, deadline} = req.body;
+    const { error } = validate(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
 
-      assessment.title = req.body.title ? req.body.title : assessment.title;			assessment.description = req.body.description ? req.body.description : assessment.description;			assessment.mentor = req.body.mentor ? req.body.mentor : assessment.mentor;			assessment.deadline = req.body.deadline ? req.body.deadline : assessment.deadline;			assessment.created_at = req.body.created_at ? req.body.created_at : assessment.created_at;			
-      assessment.save( (err, assessment) => {
-        if (err) {
-          return res.status(500).json({
-            message: 'Error when updating assessment.',
+
+    UserModel.findOne({ _id: mentor, userType: { $ne: 'Student' } }, (err, user) => {
+      if (err){
+        return res.status(500).json({
+            message: 'Error when checking mentor',
             error: err
           });
-        }
+      }
+      else{
+          if(!user) return res.status(404).json({message: 'Mentor User not found'});
 
-        return res.json(assessment);
-      });
-    });
+          assessmentModel.findOne({_id: id}, (err, assessment) => {
+            if (err) {
+              return res.status(500).json({
+                message: 'Error when getting assessment',
+                error: err
+              });
+            }
+            if (!assessment) {
+              return res.status(404).json({
+                message: 'No such assessment'
+              });
+            }
+      
+            assessment.title = title ? title : assessment.title;
+            assessment.description = description ? description : assessment.description;
+            assessment.mentor = mentor ? { _id: mentor, name: user.name, email: user.email} : assessment.mentor;
+            assessment.deadline = deadline ? deadline : assessment.deadline;
+            
+            assessment.save( (err, assessment) => {
+              if (err) {
+                return res.status(500).json({
+                  message: 'Error when updating assessment.',
+                  error: err
+                });
+              }
+      
+              return res.json(assessment);
+            });
+          });
+      }
+  });
   },
 
   /**
@@ -105,7 +150,7 @@ module.exports = {
           error: err
         });
       }
-      return res.status(204).json();
+      return res.json({message: 'Assessment Successfully Deleted!'});
     });
   }
 };

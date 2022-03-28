@@ -10,6 +10,7 @@ const db = require('./config/db');//Database
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/userRoutes');
+const assessmentRouter = require('./routes/assessment');
 
 const app = express();
 
@@ -24,5 +25,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/', indexRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/assessment', assessmentRouter);
 
 module.exports = app;
