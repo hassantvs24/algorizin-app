@@ -63,13 +63,19 @@ module.exports = {
    */
   create: async (req, res) => {
     const {file_link, grades, assessment, student, mentor} = req.body;
+    const {user_id, name, email} = req.user;
 
     let assessments = await assessmentModel.findById(assessment).exec();
     if(!assessments) return res.status(404).json({message: 'Assessment not found'});
 
-    let students = await UserModel.findOne({  _id: student, userType: 'Student' }).exec();
-    if(!students) return res.status(404).json({message: 'Student not found'});
-
+    if(student){
+      var students = await UserModel.findOne({  _id: student, userType: 'Student' }).exec();
+      if(!students) return res.status(404).json({message: 'Student not found'});
+    }else{
+      var students = await UserModel.findOne({  _id: user_id, userType: 'Student' }).exec();
+      if(!students) return res.status(404).json({message: 'Student not found'});
+    }
+    
     let mentors = await UserModel.findOne({  _id: mentor, userType: { $ne: 'Student' } }).exec();
     if(!mentors) return res.status(404).json({message: 'Mentor not found'});
 
@@ -78,7 +84,11 @@ module.exports = {
 
     let submission = new submissionModel({
 			file_link,
-			grades,
+			grades:{
+        mark: grades,
+        mentor_id: user_id,
+        mentor_name: name
+      },
 			assessment : {
         _id: assessments._id,
         title: assessments.title
@@ -126,6 +136,7 @@ module.exports = {
 
 
       const {file_link, grades, assessment, student, mentor} = req.body;
+      const {user_id, name} = req.user;
 
       if(assessment){
         var assessments = await assessmentModel.findById(assessment).exec();
@@ -146,7 +157,7 @@ module.exports = {
       
   
       submission.file_link = file_link ? file_link : submission.file_link;
-			submission.grades = grades ? grades : submission.grades;
+			submission.grades = grades ? { mark: grades, mentor_id: user_id, mentor_name: name } : submission.grades;
 			submission.assessment = assessment ? { _id: assessments._id, title: assessments.title } : submission.assessment;
 			submission.student = student ? { _id: students._id, name: students.name, email: students.email } : submission.student;
 			submission.mentor = mentor ? { _id: students._id, name: students.name, email: students.email } : submission.mentor;

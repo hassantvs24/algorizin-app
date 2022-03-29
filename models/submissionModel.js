@@ -5,7 +5,11 @@ let Schema = mongoose.Schema;
 
 const fields = {
 	'file_link' : {type: String, required: true},
-	'grades' : String,
+	'grades' : {
+		'mark': Number,
+		'mentor_id': { type: Schema.Types.ObjectId, ref: 'userModel'},
+		'mentor_name': String,
+	},
 	'assessment' : {
 		 _id: {
 			type: Schema.Types.ObjectId,
