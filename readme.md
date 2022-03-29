@@ -12,8 +12,9 @@ Clone the project to any directory where you do development work
 ###### Dev run
 `npm run dev`
 
+#### Postman API doc:
+https://documenter.getpostman.com/view/19251756/UVyoWJNf
+
 ###### For any assistance please contact with me
 **Nazmul Hossain <wall.mate@gmail.com>**
 
-#### Postman API doc:
-https://documenter.getpostman.com/view/19251756/UVyoWJNf
